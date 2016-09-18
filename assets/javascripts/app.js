@@ -39,12 +39,17 @@ function withStyles(ctx, styles, doFn) {
   applyStyles(ctx, oldStyles);
 }
 
+function padWith(padding, str) {
+  const size = padding.length < str.length ? str.length : padding.length;
+  return (padding + str).substr(-size);
+}
+
 function formatPeak(peak) {
   const asInt = parseInt(peak, 10);
   if (asInt > 999999 || asInt < 1000) {
       return asInt;
   }
-  return parseInt(asInt / 1000, 10) + '.' + (asInt % 1000) + 'k';
+  return parseInt(asInt / 1000, 10) + '.' + padWith('000', asInt % 1000) + 'k';
 }
 
 function maximum(arr) {
@@ -68,7 +73,7 @@ function drawFrequencyData(ctx, data, peaks) {
       const prev = data[i - 1];
       const prev2 = data[i - 2];
       if (prev > v && prev2 <= prev) {
-        peaks.push([i - 1, Math.pow(data[i - 1], 10)]);
+        peaks.push([i - 1, Math.pow(data[i - 1] / 10.0, 10)]);
       }
     }
     const x = 1.0 * width * i / topRange;
