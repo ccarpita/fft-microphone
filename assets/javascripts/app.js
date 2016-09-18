@@ -35,7 +35,7 @@ function withStyles(ctx, styles, doFn) {
   applyStyles(ctx, styles);
   try {
     doFn();
-  } catch(e) {}
+  } catch(e) { console.error(e); }
   applyStyles(ctx, oldStyles);
 }
 
@@ -59,6 +59,8 @@ function drawFrequencyData(ctx, data, peaks) {
   const topRange = parseInt(data.length * 0.30, 10);
   const max = maximum(data);
   const scaleY = GRAPH_NORMALIZE ? (max > 32 ? (max * 1.0) : 255.0) : 255.0;
+  const width = ctx.canvas.width;
+  const height = ctx.canvas.height;
   ctx.beginPath();
   for (let i = 0; i < topRange; i++) {
     const v = data[i];
@@ -83,9 +85,10 @@ function drawFrequencyData(ctx, data, peaks) {
 
 function drawDiagnostic(ctx, activeSkin, sampleRate, peaks) {
   const fftStep = sampleRate / FFT_SIZE;
+  const width = ctx.canvas.width;
+  const height = ctx.canvas.height;
   peaks.sort((a, b) => compareNumeric(b[1], a[1]));
   withStyles(ctx, activeSkin.text, () => {
-    ctx.fillText("Max: " + max, width - 100, activeSkin.fontSize);
     let pos = activeSkin.fontSize;
     for (let i = 0; i < 5 && i < peaks.length; i++) {
       const peak = peaks[i];
@@ -109,8 +112,6 @@ function startMonitor(audioContext, analyser, canvasNode, stopNode, startNode) {
   const args = [].slice.apply(arguments);
   const freqData = new Uint8Array(analyser.frequencyBinCount);
   const ctx = canvasNode.getContext('2d');
-  const width = canvasNode.width = window.innerWidth;
-  const height = canvasNode.height = window.innerHeight * 0.80;
   const unsub = [
     $click(startNode, start),
     $click(stopNode, stop)
@@ -127,12 +128,14 @@ function startMonitor(audioContext, analyser, canvasNode, stopNode, startNode) {
   }
   const activeSkin = SKINS.basic;
   function step() {
+    const width = canvasNode.width = window.innerWidth;
+    const height = canvasNode.height = window.innerHeight * 0.80;
     applyStyles(ctx, activeSkin.graph);
     ctx.fillRect(0, 0, width, height);
     const peaks = [];
     analyser.getByteFrequencyData(freqData);
     drawFrequencyData(ctx, freqData, peaks);
-    drawDiagostic(ctx, activeSkin, audioContext.sampleRate, peaks);
+    drawDiagnostic(ctx, activeSkin, audioContext.sampleRate, peaks);
     if (!stopped) {
       window.requestAnimationFrame(step);
     }
@@ -149,7 +152,7 @@ function getMicrophoneStream() {
   });
 }
 
-function $id = id => document.getElementById(id);
+const $q = sel => document.querySelector(sel);
 
 function init() {
   const audioContext = new AudioContext();
@@ -162,9 +165,9 @@ function init() {
       startMonitor(
           audioContext,
           analyser,
-          $id('freq'),
-          $id('stop'),
-          $id('start'));
+          $q('canvas'),
+          $q('#stop'),
+          $q('#start'));
     });
 }
 
